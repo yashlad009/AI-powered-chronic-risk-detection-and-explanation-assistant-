@@ -1,0 +1,10 @@
+version: '3.8'
+
+# Docker Compose stub for the Chronic Disease Risk Assistant
+# Services:
+# - backend: FastAPI app (later)
+# - frontend: React + Vite + TS (later)
+# - db: PostgreSQL database (later)
+# - chromadb: Vector DB for RAG (later)
+
+services: {}

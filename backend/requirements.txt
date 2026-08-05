@@ -1,0 +1,13 @@
+# Backend Dependencies for AI-Assisted Chronic Disease Risk Prediction
+# Note: Using PyTorch (torch) for Deep Learning/ANN operations
+
+fastapi
+uvicorn
+sqlalchemy
+alembic
+pydantic
+scikit-fuzzy
+shap
+chromadb
+torch
+python-dotenv
