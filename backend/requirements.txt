@@ -1,5 +1,5 @@
 # Backend Dependencies for AI-Assisted Chronic Disease Risk Prediction
-# Note: Using PyTorch (torch) for Deep Learning/ANN operations
+# Note: Using TensorFlow for Deep Learning/ANN operations
 
 fastapi
 uvicorn
@@ -9,5 +9,10 @@ pydantic
 scikit-fuzzy
 shap
 chromadb
-torch
+tensorflow
+pandas
+scikit-learn
+matplotlib
+joblib
+numpy
 python-dotenv
