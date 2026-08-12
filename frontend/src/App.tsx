@@ -1,238 +1,297 @@
 import React, { useState } from 'react';
+import { predictDiabetesRisk, PatientVitals, RiskPredictionResponse } from './api/predict';
 
-interface RiskFactor {
-  name: string;
-  weight: number; // 0 to 100
-  impact: 'High' | 'Medium' | 'Low';
-}
+type UiState = 'idle' | 'loading' | 'success' | 'error';
 
 export default function App() {
-  const [patientId, setPatientId] = useState('');
-  const [age, setAge] = useState(45);
-  const [bmi, setBmi] = useState(27.4);
-  const [systolic, setSystolic] = useState(130);
-  const [diastolic, setDiastolic] = useState(85);
-  const [cholesterol, setCholesterol] = useState(210);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [prediction, setPrediction] = useState<{
-    riskScore: number;
-    category: string;
-    factors: RiskFactor[];
-    recommendations: string[];
-  } | null>(null);
+  // Form states initialized with typical neutral clinical baselines
+  const [pregnancies, setPregnancies] = useState<number>(0);
+  const [glucose, setGlucose] = useState<number>(120);
+  const [bloodPressure, setBloodPressure] = useState<number>(80);
+  const [skinThickness, setSkinThickness] = useState<number>(20);
+  const [insulin, setInsulin] = useState<number>(79);
+  const [bmi, setBmi] = useState<number>(25.4);
+  const [dpf, setDpf] = useState<number>(0.47);
+  const [age, setAge] = useState<number>(33);
 
-  const handlePredict = (e: React.FormEvent) => {
+  // Status states
+  const [status, setStatus] = useState<UiState>('idle');
+  const [prediction, setPrediction] = useState<RiskPredictionResponse | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string>('');
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsSubmitting(true);
-    
-    // Simulate API response
-    setTimeout(() => {
-      // Calculate a pseudo risk score based on simple metrics
-      const scoreWeight = (age * 0.4) + ((bmi - 18.5) * 1.5) + ((systolic - 120) * 0.5) + ((cholesterol - 150) * 0.2);
-      const score = Math.min(Math.max(Math.round(scoreWeight), 5), 98);
-      
-      let category = 'Low Risk';
-      if (score > 60) category = 'High Risk';
-      else if (score > 35) category = 'Moderate Risk';
+    setStatus('loading');
+    setErrorMsg('');
 
-      const factors: RiskFactor[] = [
-        { name: 'Systolic Blood Pressure', weight: Math.min(Math.round((systolic / 180) * 100), 100), impact: systolic > 140 ? 'High' : systolic > 130 ? 'Medium' : 'Low' },
-        { name: 'Body Mass Index (BMI)', weight: Math.min(Math.round((bmi / 40) * 100), 100), impact: bmi > 30 ? 'High' : bmi > 25 ? 'Medium' : 'Low' },
-        { name: 'Total Cholesterol', weight: Math.min(Math.round((cholesterol / 300) * 100), 100), impact: cholesterol > 240 ? 'High' : cholesterol > 200 ? 'Medium' : 'Low' },
-        { name: 'Age Factor', weight: Math.min(Math.round((age / 100) * 100), 100), impact: age > 65 ? 'High' : age > 45 ? 'Medium' : 'Low' }
-      ].sort((a, b) => b.weight - a.weight);
+    const payload: PatientVitals = {
+      Pregnancies: pregnancies,
+      Glucose: glucose,
+      BloodPressure: bloodPressure,
+      SkinThickness: skinThickness,
+      Insulin: insulin,
+      BMI: bmi,
+      DiabetesPedigreeFunction: dpf,
+      Age: age
+    };
 
-      const recommendations = [];
-      if (bmi > 25) recommendations.push('Adopt a heart-healthy diet low in saturated fats and refined sugars to help optimize body mass.');
-      if (systolic > 130 || diastolic > 80) recommendations.push('Incorporate 150 minutes of moderate cardiovascular activity weekly to lower blood pressure naturally.');
-      if (cholesterol > 200) recommendations.push('Consult a healthcare professional about managing lipid profiles with omega-3 rich nutrition or targeted therapies.');
-      if (recommendations.length === 0) recommendations.push('Maintain your excellent healthy lifestyle and schedule regular annual biometric screenings.');
-
-      setPrediction({
-        riskScore: score,
-        category,
-        factors,
-        recommendations
-      });
-      setIsSubmitting(false);
-    }, 1200);
+    try {
+      const data = await predictDiabetesRisk(payload);
+      setPrediction(data);
+      setStatus('success');
+    } catch (err: any) {
+      setErrorMsg(err.message || 'An unexpected error occurred.');
+      setStatus('error');
+    }
   };
 
   return (
     <div className="container">
       {/* Header */}
       <header className="app-header">
-        <div className="logo-section">
-          <span className="logo-icon">🏥</span>
-          <div>
-            <h1>Cardiologix AI</h1>
-            <p className="subtitle">Chronic Risk Detection & Explanation Engine</p>
-          </div>
-        </div>
-        <div className="api-badge">
-          <span className="status-dot"></span>
-          <span>Core Agent Sync Active</span>
+        <div>
+          <span className="app-eyebrow">Risk Assistant · hybrid ANN + FIS engine</span>
+          <h1 className="app-title">Diabetes Prediction Requisition</h1>
         </div>
       </header>
 
-      {/* Main Grid */}
+      {/* Main Grid Layout */}
       <main className="dashboard-grid">
-        {/* Left Form Panel */}
-        <section className="card form-card">
-          <h2 className="card-title">Biometric Entry</h2>
-          <p className="card-subtitle">Input real-time patient statistics to compute risk metrics</p>
+        {/* Left Panel: Input Requisition */}
+        <section className="panel">
+          <h2 className="panel-title">Patient Requisition</h2>
           
-          <form onSubmit={handlePredict}>
+          <form onSubmit={handleSubmit} className="form-grid">
             <div className="form-group">
-              <label>Patient Identifier</label>
-              <input 
-                type="text" 
-                placeholder="e.g. PAT-9082" 
-                value={patientId}
-                onChange={e => setPatientId(e.target.value)}
-                required 
-              />
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Age (years)</label>
-                <input 
-                  type="number" 
-                  min="1" 
-                  max="120" 
-                  value={age} 
-                  onChange={e => setAge(Number(e.target.value))}
-                />
+              <div className="label-row">
+                <label htmlFor="pregnancies">Pregnancies</label>
               </div>
-              <div className="form-group">
-                <label>BMI (kg/m²)</label>
-                <input 
-                  type="number" 
-                  step="0.1" 
-                  min="10" 
-                  max="60" 
-                  value={bmi} 
-                  onChange={e => setBmi(Number(e.target.value))}
+              <div className="input-wrapper">
+                <input
+                  id="pregnancies"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={pregnancies}
+                  onChange={(e) => setPregnancies(Math.max(0, parseInt(e.target.value) || 0))}
+                  required
                 />
-              </div>
-            </div>
-
-            <div className="form-row">
-              <div className="form-group">
-                <label>Systolic BP (mmHg)</label>
-                <input 
-                  type="number" 
-                  min="70" 
-                  max="250" 
-                  value={systolic} 
-                  onChange={e => setSystolic(Number(e.target.value))}
-                />
-              </div>
-              <div className="form-group">
-                <label>Diastolic BP (mmHg)</label>
-                <input 
-                  type="number" 
-                  min="40" 
-                  max="150" 
-                  value={diastolic} 
-                  onChange={e => setDiastolic(Number(e.target.value))}
-                />
+                <span className="input-unit">count</span>
               </div>
             </div>
 
             <div className="form-group">
-              <label>Total Cholesterol (mg/dL)</label>
-              <input 
-                type="number" 
-                min="100" 
-                max="500" 
-                value={cholesterol} 
-                onChange={e => setCholesterol(Number(e.target.value))}
-              />
+              <div className="label-row">
+                <label htmlFor="glucose">Glucose</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="glucose"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={glucose}
+                  onChange={(e) => setGlucose(Math.max(0, parseInt(e.target.value) || 0))}
+                  required
+                />
+                <span className="input-unit">mg/dL</span>
+              </div>
             </div>
 
-            <button type="submit" className="btn-primary" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="bloodPressure">Blood Pressure</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="bloodPressure"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={bloodPressure}
+                  onChange={(e) => setBloodPressure(Math.max(0, parseInt(e.target.value) || 0))}
+                  required
+                />
+                <span className="input-unit">mm Hg</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="skinThickness">Skin Thickness</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="skinThickness"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={skinThickness}
+                  onChange={(e) => setSkinThickness(Math.max(0, parseInt(e.target.value) || 0))}
+                  required
+                />
+                <span className="input-unit">mm</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="insulin">Insulin</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="insulin"
+                  type="number"
+                  min="0"
+                  step="1"
+                  value={insulin}
+                  onChange={(e) => setInsulin(Math.max(0, parseInt(e.target.value) || 0))}
+                  required
+                />
+                <span className="input-unit">mu U/ml</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="bmi">BMI</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="bmi"
+                  type="number"
+                  min="0.1"
+                  step="0.1"
+                  value={bmi}
+                  onChange={(e) => setBmi(Math.max(0.1, parseFloat(e.target.value) || 0.1))}
+                  required
+                />
+                <span className="input-unit">kg/m²</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="dpf">Pedigree Function</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="dpf"
+                  type="number"
+                  min="0"
+                  step="0.001"
+                  value={dpf}
+                  onChange={(e) => setDpf(Math.max(0, parseFloat(e.target.value) || 0))}
+                  required
+                />
+                <span className="input-unit">unitless</span>
+              </div>
+            </div>
+
+            <div className="form-group">
+              <div className="label-row">
+                <label htmlFor="age">Age</label>
+              </div>
+              <div className="input-wrapper">
+                <input
+                  id="age"
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={age}
+                  onChange={(e) => setAge(Math.max(1, parseInt(e.target.value) || 1))}
+                  required
+                />
+                <span className="input-unit">years</span>
+              </div>
+            </div>
+
+            <button type="submit" className="btn-submit" disabled={status === 'loading'}>
+              {status === 'loading' ? (
                 <>
                   <span className="spinner"></span>
-                  Processing Models...
+                  Processing metrics...
                 </>
-              ) : 'Run Analysis Engine'}
+              ) : 'Submit Requisition'}
             </button>
           </form>
         </section>
 
-        {/* Right Output Panel */}
-        <section className="card output-card">
-          {!prediction && !isSubmitting && (
-            <div className="empty-state">
-              <div className="empty-icon">📊</div>
-              <h3>Analysis Awaiting Biometrics</h3>
-              <p>Fill out the patient metrics on the left panel to execute chronic disease prediction algorithms and get detailed explanations.</p>
-            </div>
-          )}
-
-          {isSubmitting && (
-            <div className="loading-state">
-              <div className="loading-logo">⚡</div>
-              <h3>Calculating Risk Scores</h3>
-              <p>Analyzing biomarkers against model cohorts...</p>
-            </div>
-          )}
-
-          {prediction && !isSubmitting && (
-            <div className="prediction-results">
-              <h2 className="card-title">Diagnostics Report</h2>
-              
-              {/* Risk Gauge Header */}
-              <div className="risk-score-display">
-                <div className="score-ring">
-                  <div className="score-value">{prediction.riskScore}%</div>
-                  <div className="score-label">Risk Index</div>
-                </div>
-                <div className="status-label-group">
-                  <span className={`badge ${prediction.category.toLowerCase().replace(' ', '-')}`}>
-                    {prediction.category}
-                  </span>
-                  <p className="explanation">
-                    Patient shows a <strong>{prediction.category.toLowerCase()}</strong> for chronic cardiovascular events within a 10-year window.
-                  </p>
-                </div>
+        {/* Right Panel: Instrument Readout */}
+        <section className="panel">
+          <h2 className="panel-title">Instrument Readout</h2>
+          
+          <div className="readout-box">
+            {status === 'idle' && (
+              <div className="state-idle">
+                <h3>Awaiting Requisition</h3>
+                <p>Submit patient biometric data on the left panel to execute real-time model analysis.</p>
               </div>
+            )}
 
-              {/* Explanations Bar Charts */}
-              <div className="explanations-section">
-                <h3>Impact Factor Breakdown</h3>
-                <div className="factors-list">
-                  {prediction.factors.map((factor, idx) => (
-                    <div key={idx} className="factor-item">
-                      <div className="factor-info">
-                        <span className="factor-name">{factor.name}</span>
-                        <span className={`impact-badge ${factor.impact.toLowerCase()}`}>{factor.impact}</span>
-                      </div>
-                      <div className="bar-track">
-                        <div 
-                          className={`bar-fill ${factor.impact.toLowerCase()}`}
-                          style={{ width: `${factor.weight}%` }}
-                        ></div>
-                      </div>
+            {status === 'loading' && (
+              <div className="state-loading">
+                <span className="spinner" style={{ borderColor: 'rgba(28, 35, 33, 0.2)', borderTopColor: 'var(--ink)', width: '24px', height: '24px', display: 'inline-block', marginBottom: '1rem' }}></span>
+                <p>Evaluating ANN probabilities & FIS fuzzy parameters...</p>
+              </div>
+            )}
+
+            {status === 'error' && (
+              <div className="state-error">
+                <h3 className="state-error-title">Analysis Failed</h3>
+                <p>The prediction system returned the following exception/error:</p>
+                <div className="state-error-detail">{errorMsg}</div>
+              </div>
+            )}
+
+            {status === 'success' && prediction && (
+              <div className="results-wrapper">
+                {/* Score & Badge stamp */}
+                <div className="results-header">
+                  <div className="readout-numbers">
+                    <div className="readout-num-group">
+                      <span className="readout-num-label">Risk probability</span>
+                      <span className="readout-num-val">{(prediction.risk_probability * 100).toFixed(1)}%</span>
                     </div>
-                  ))}
+                    <div className="readout-num-group">
+                      <span className="readout-num-label">FIS Confidence</span>
+                      <span className="readout-num-val">{(prediction.confidence * 100).toFixed(0)}%</span>
+                    </div>
+                  </div>
+                  
+                  <div className={`badge-stamp ${prediction.risk_band.toLowerCase()}`}>
+                    {prediction.risk_band}
+                  </div>
+                </div>
+
+                {/* Strip-Chart Risk Gauge */}
+                <div className="strip-chart-container">
+                  <span className="readout-num-label">Risk Level Indicator</span>
+                  <div className="strip-chart-track">
+                    <div 
+                      className="strip-chart-marker"
+                      style={{ left: `${Math.min(100, Math.max(0, prediction.risk_probability * 100))}%` }}
+                    />
+                  </div>
+                  <div className="strip-chart-ticks">
+                    <div className="strip-chart-tick"><span>0.0</span></div>
+                    <div className="strip-chart-tick"><span>0.25</span></div>
+                    <div className="strip-chart-tick"><span>0.5</span></div>
+                    <div className="strip-chart-tick"><span>0.75</span></div>
+                    <div className="strip-chart-tick"><span>1.0</span></div>
+                  </div>
+                </div>
+
+                {/* Clearly-marked Spot for Future Explanation Panel */}
+                <div className="explanation-placeholder">
+                  <div className="explanation-placeholder-header">Explanation & Feature Breakdown</div>
+                  <div className="explanation-placeholder-content">
+                    Model explanation module (SHAP/Feature Importance) is currently offline. Diagnostics breakdown will populate here when backend integration is established.
+                  </div>
                 </div>
               </div>
-
-              {/* Recommendations */}
-              <div className="recommendations-section">
-                <h3>Recommended Action Guidelines</h3>
-                <ul>
-                  {prediction.recommendations.map((rec, idx) => (
-                    <li key={idx}>{rec}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </section>
       </main>
     </div>
