@@ -10,7 +10,17 @@ class PatientVitals(BaseModel):
     DiabetesPedigreeFunction: float = Field(..., ge=0, description="Diabetes pedigree function score")
     Age: int = Field(..., gt=0, description="Age in years")
 
+class FeatureContribution(BaseModel):
+    feature: str = Field(..., description="Feature name")
+    value: float = Field(..., description="Original vitals value for this feature")
+    shap_value: float = Field(..., description="SHAP value indicating contribution to risk probability")
+
 class RiskPredictionResponse(BaseModel):
     risk_probability: float = Field(..., ge=0.0, le=1.0, description="Raw risk probability of chronic disease")
     risk_band: str = Field(..., description="Qualitative risk band based on FIS (Low, Medium, High)")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Fuzzy membership confidence score")
+    feature_contributions: list[FeatureContribution] = Field(
+        default=[],
+        description="Feature contribution explanations calculated via SHAP, sorted by descending absolute impact"
+    )
+
