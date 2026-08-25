@@ -1,1 +1,1 @@
-# AI-Assisted Chronic Disease Risk Prediction and Explanation Assistant (WIP Skeleton)
+# AI-Assisted Chronic Disease Risk Prediction and Explanation Assistant 
