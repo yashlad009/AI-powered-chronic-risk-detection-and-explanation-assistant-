@@ -1,12 +1,25 @@
 export interface PatientVitals {
-  Pregnancies: number;              // integer, >= 0
-  Glucose: number;                  // mg/dL, >= 0
-  BloodPressure: number;            // diastolic, mm Hg, >= 0
-  SkinThickness: number;            // mm, >= 0
-  Insulin: number;                  // mu U/ml, >= 0
-  BMI: number;                      // kg/m^2, > 0
-  DiabetesPedigreeFunction: number; // >= 0
-  Age: number;                      // integer, > 0
+  HighBP: number;               // binary flag (0 or 1), high blood pressure
+  HighChol: number;             // binary flag (0 or 1), high cholesterol
+  CholCheck: number;            // binary flag (0 or 1), cholesterol check in past 5 years
+  BMI: number;                  // body mass index, > 0
+  Smoker: number;               // binary flag (0 or 1), smoked at least 100 cigarettes
+  Stroke: number;               // binary flag (0 or 1), ever had a stroke
+  HeartDiseaseorAttack: number; // binary flag (0 or 1), heart disease or attack
+  PhysActivity: number;         // binary flag (0 or 1), physical activity in past 30 days
+  Fruits: number;               // binary flag (0 or 1), consume fruit daily
+  Veggies: number;              // binary flag (0 or 1), consume vegetables daily
+  HvyAlcoholConsump: number;    // binary flag (0 or 1), heavy alcohol consumption
+  AnyHealthcare: number;        // binary flag (0 or 1), health care coverage
+  NoDocbcCost: number;          // binary flag (0 or 1), could not see doctor due to cost
+  GenHlth: number;              // general health scale, 1–5
+  MentHlth: number;             // number of poor mental health days, 0–30
+  PhysHlth: number;             // number of poor physical health days, 0–30
+  DiffWalk: number;             // binary flag (0 or 1), difficulty walking
+  Sex: number;                  // binary flag (0 = female, 1 = male)
+  Age: number;                  // age bracket category, 1–13
+  Education: number;            // education category level, 1–6
+  Income: number;               // income category level, 1–8
 }
 
 export interface RiskPredictionResponse {

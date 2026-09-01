@@ -11,7 +11,7 @@ from tensorflow.keras.layers import Dense, Dropout
 class ChronicRiskANN:
     """Neural Network model for chronic disease risk prediction."""
     
-    def __init__(self, input_dim=8, dropout_rate=0.2):
+    def __init__(self, input_dim=21, dropout_rate=0.2):
         self.input_dim = input_dim
         self.dropout_rate = dropout_rate
         self.model = self._build_model()

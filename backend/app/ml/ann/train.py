@@ -41,13 +41,12 @@ def train_model():
     
     # Define paths relative to the workspace root
     base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../../.."))
-    dataset_path = os.path.join(base_dir, "ml-training", "datasets", "diabetes.csv")
+    dataset_path = os.path.join(base_dir, "ml-training", "new_dataset", "diabetes_binary_5050split_health_indicators_BRFSS2015.csv")
     saved_models_dir = os.path.join(base_dir, "ml-training", "saved_models")
     
-    model_save_path = os.path.join(saved_models_dir, "ann_model.keras")
-    scaler_save_path = os.path.join(saved_models_dir, "scaler.joblib")
-    imputation_save_path = os.path.join(saved_models_dir, "imputation_values.joblib")
-    plot_save_path = os.path.join(saved_models_dir, "learning_curves.png")
+    model_save_path = os.path.join(saved_models_dir, "ann_model_brfss.keras")
+    scaler_save_path = os.path.join(saved_models_dir, "scaler_brfss.joblib")
+    plot_save_path = os.path.join(saved_models_dir, "learning_curves_brfss.png")
 
     os.makedirs(saved_models_dir, exist_ok=True)
 
@@ -63,35 +62,16 @@ def train_model():
     print("\nColumns and Data Types:")
     print(df.dtypes)
     
-    print("\nTarget Class ('Outcome') Distribution:")
-    print(df["Outcome"].value_counts(normalize=True))
-    print(df["Outcome"].value_counts())
-
-    print("\n=========================================")
-    print("STEP 2: INVALID ZERO HANDLING")
-    print("=========================================")
-    print("Replacing invalid 0s with NaN for: Glucose, BloodPressure, SkinThickness, Insulin, BMI...")
-    cols_to_handle = ["Glucose", "BloodPressure", "SkinThickness", "Insulin", "BMI"]
-    
-    # Make a copy to avoid warnings
-    df_cleaned = df.copy()
-    
-    # Print zeros count before handling
-    print("\nZero counts before replacement:")
-    for col in cols_to_handle:
-        print(f"  {col}: {(df_cleaned[col] == 0).sum()} zeros")
-
-    df_cleaned[cols_to_handle] = df_cleaned[cols_to_handle].replace(0, np.nan)
-
-    print("\nNaN counts after replacement:")
-    print(df_cleaned.isnull().sum())
+    print("\nTarget Class ('Diabetes_binary') Distribution:")
+    print(df["Diabetes_binary"].value_counts(normalize=True))
+    print(df["Diabetes_binary"].value_counts())
 
     print("\n=========================================")
     print("STEP 3: TRAIN/TEST SPLIT (STRATIFIED)")
     print("=========================================")
     print("Splitting the dataset into features (X) and target (y) with 80% train / 20% test...")
-    X = df_cleaned.drop("Outcome", axis=1)
-    y = df_cleaned["Outcome"]
+    X = df.drop("Diabetes_binary", axis=1)
+    y = df["Diabetes_binary"]
 
     # Stratified split based on class labels to preserve target ratio
     X_train, X_test, y_train, y_test = train_test_split(
@@ -102,31 +82,6 @@ def train_model():
         stratify=y
     )
     print(f"Train split shape: {X_train.shape}, Test split shape: {X_test.shape}")
-
-    print("\n=========================================")
-    print("STEP 4: IMPUTATION")
-    print("=========================================")
-    print("Computing mean/median from X_train only to prevent data leakage...")
-    
-    # Calculate values strictly from X_train
-    imputation_values = {
-        "Glucose": float(X_train["Glucose"].mean()),
-        "BloodPressure": float(X_train["BloodPressure"].mean()),
-        "BMI": float(X_train["BMI"].mean()),
-        "SkinThickness": float(X_train["SkinThickness"].median()),
-        "Insulin": float(X_train["Insulin"].median())
-    }
-    
-    print(f"Computed imputation mapping: {imputation_values}")
-    
-    # Apply to X_train and X_test
-    X_train = X_train.copy()
-    X_test = X_test.copy()
-    for col, val in imputation_values.items():
-        X_train[col] = X_train[col].fillna(val)
-        X_test[col] = X_test[col].fillna(val)
-
-    print("Imputation completed successfully (no NaNs remaining in train or test).")
 
     print("\n=========================================")
     print("STEP 5: FEATURE SCALING")
@@ -140,7 +95,7 @@ def train_model():
     print("STEP 6 & 7: ANN ARCHITECTURE & TRAINING")
     print("=========================================")
     # Initialize the architecture (Dense(16) -> Dropout(0.2) -> Dense(8) -> Dropout(0.2) -> Dense(1))
-    model = ChronicRiskANN(input_dim=8, dropout_rate=0.2)
+    model = ChronicRiskANN(input_dim=21, dropout_rate=0.2)
 
     # Set up EarlyStopping callback
     early_stopping = EarlyStopping(
@@ -189,6 +144,7 @@ def train_model():
     plt.grid(True, linestyle="--", alpha=0.6)
     plt.legend()
     
+    # Save learning curves plot
     plt.tight_layout()
     plt.savefig(plot_save_path, dpi=300)
     plt.close()
@@ -241,9 +197,6 @@ def train_model():
     print(f"Saving standard scaler to: {scaler_save_path}")
     joblib.dump(scaler, scaler_save_path)
 
-    print(f"Saving training-derived imputation values to: {imputation_save_path}")
-    joblib.dump(imputation_values, imputation_save_path)
-
     print("\nAll pipeline tasks executed successfully.")
     
     return {
@@ -258,7 +211,7 @@ def train_model():
         "val_accuracy": history.history["val_accuracy"][-1],
         "model_path": model_save_path,
         "scaler_path": scaler_save_path,
-        "imputation_path": imputation_save_path,
+        "imputation_path": None,
         "plot_path": plot_save_path
     }
 
