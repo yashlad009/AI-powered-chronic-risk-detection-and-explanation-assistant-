@@ -1,0 +1,15 @@
+{
+    "selected_model": "Tuned ANN",
+    "model_file": "tuned_ann.keras",
+    "reason": "Best overall balance of accuracy, recall, and F1 score. ROC-AUC difference from tuned Gradient Boosting is negligible.",
+    "metrics": {
+        "accuracy": 0.74,
+        "precision": 0.7554,
+        "recall": 0.7019,
+        "specificity": 0.7774,
+        "f1_score": 0.7277,
+        "roc_auc": 0.8075
+    },
+    "benchmark_model": "Tuned Gradient Boosting",
+    "benchmark_model_file": "tuned_gradient_boosting.pkl"
+}
